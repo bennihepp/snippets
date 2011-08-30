@@ -1,0 +1,14 @@
+BOOST = '/opt/local'
+BOOSTLIBPATH = BOOST+'/lib'
+BOOSTINCPATH = BOOST+'/include'
+PYTHONINCPATH = '/opt/local/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7'
+
+env = Environment(LIBPATH=[BOOSTLIBPATH,'.'], CPPPATH=[BOOSTINCPATH,PYTHONINCPATH], RPATH=[BOOSTLIBPATH])
+
+BOOST_PYTHON_LIB='boost_python'
+PYTHON_LIB='python2.7'
+
+env.SharedLibrary(target='liblib', source='lib.cpp', SHLIBPREFIX='')
+
+env.SharedLibrary(target='lib_ext.so', source='lib_ext.cpp', SHLIBPREFIX='', LIBS=[BOOST_PYTHON_LIB,PYTHON_LIB,'liblib'])
+
