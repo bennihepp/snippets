@@ -90,8 +90,8 @@ class ConsoleView(QTextEdit):
                 action.setCheckable(True)
             return action
         sm = PyQtSignalMapper(self)
-        for text, shortcut in zip(*[('Cut', 'Copy', 'Paste', 'Select All'),
-                                   ('Ctrl+X', 'Ctrl+Alt+C', 'Ctrl+V', 'Ctrl+W')]):
+        for text, shortcut in zip(*[('Cut', 'Copy', 'Paste', 'Select All', 'Clear'),
+                                   ('Ctrl+X', 'Ctrl+Alt+C', 'Ctrl+V', 'Ctrl+W', 'Ctrl+L')]):
             action = make_action(text, slot=sm.map, shortcut=shortcut)
             self.addAction(action)
             sm.setMapping(action, text)
@@ -111,6 +111,8 @@ class ConsoleView(QTextEdit):
             key, text = Qt.Key_V, 'v'
         elif text == 'Select All':
             key, text = Qt.Key_A, 'a'
+        elif text == 'Clear':
+            key, text = Qt.Key_L, 'l'
         else:
             raise Exception('Unknown object ID:', text)
         keyEvent = QKeyEvent(qtype, key, modifiers, text)
@@ -119,6 +121,12 @@ class ConsoleView(QTextEdit):
     def closeEvent(self, event):
         event.accept()
         self.emit(SIGNAL('closed'))
+
+    def clear(self):        
+        line = self.getCurrentLine()
+        self.setPlainText('')
+        self.showPrompt(self.prompt)
+        self.write(line)
 
     def write(self, text):
         '''
@@ -274,6 +282,9 @@ class ConsoleView(QTextEdit):
         elif event.key() == Qt.Key_Control or event.key() == Qt.Key_Shift \
              or event.key() == Qt.Key_Meta or event.key() == Qt.Key_Alt:
             pass_up = True
+        elif event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_L:
+            self.clear()
+            return
 
         if pass_up:
             QTextEdit.keyPressEvent(self, event)
