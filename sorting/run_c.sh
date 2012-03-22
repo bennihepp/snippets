@@ -1,0 +1,2 @@
+time ./bubblesort data.in
+
