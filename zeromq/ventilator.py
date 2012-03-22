@@ -2,6 +2,9 @@ import time
 import zmq
 from  multiprocessing import Process
 
+NUM = 100000
+NUM_OF_PROCS = 100
+
 def ventilator():
     # Initialize a zeromq context
     context = zmq.Context()
@@ -14,7 +17,7 @@ def ventilator():
     time.sleep(1)
 
     # Send the numbers between 1 and ten thousand as work messages
-    for num in range(10000):
+    for num in xrange(NUM):
         work_message = { 'num' : num }
         ventilator_send.send_json(work_message)
 
@@ -53,7 +56,9 @@ def worker(wrk_num):
         if socks.get(work_receiver) == zmq.POLLIN:
             work_message = work_receiver.recv_json()
             product = work_message['num'] * work_message['num']
-            answer_message = { 'worker' : wrk_num, 'result' : product }
+            answer_message = {'worker': wrk_num,
+                              'result': product,
+                              'input': work_message['num']}
             results_sender.send_json(answer_message)
 
         # If the message came over the control channel, shut down the worker.
@@ -75,20 +80,24 @@ def result_manager():
     control_sender = context.socket(zmq.PUB)
     control_sender.bind("tcp://127.0.0.1:5559")
 
-    for task_nbr in range(10000):
+    for task_nbr in xrange(NUM):
         result_message = results_receiver.recv_json()
-        print "Worker %i answered: %i" % (result_message['worker'], result_message['result'])
+        #print "Worker %i answered: %i" % (result_message['worker'], result_message['result'])
+        assert result_message['result'] == result_message['input'] * result_message['input']
 
         # Signal to all workers that we are finsihed
     control_sender.send_json("FINISHED")
-    time.sleep(5)
+    time.sleep(1)
 
 if __name__ == "__main__":
 
     # Create a pool of workers to distribute work to
-    worker_pool = range(10)
+    worker_pool = range(NUM_OF_PROCS)
+    workers = []
     for wrk_num in range(len(worker_pool)):
-        Process(target=worker, args=(wrk_num,)).start()
+        w = Process(target=worker, args=(wrk_num,))
+        w.start()
+        workers.append(w)
 
     # Fire up our result manager...
     result_manager = Process(target=result_manager, args=())
@@ -97,4 +106,13 @@ if __name__ == "__main__":
     # Start the ventilator!
     ventilator = Process(target=ventilator, args=())
     ventilator.start()
+
+    print 'joining...'
+
+    for worker in workers:
+        worker.join()
+    result_manager.join()
+    ventilator.join()
+
+    print 'done'
 
