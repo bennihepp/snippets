@@ -27,7 +27,7 @@ def worker(wrk_num):
     # Initialize a zeromq context
     context = zmq.Context()
 
-    print('{}> Trying to connect...'.format(wrk_num))
+    #print('{}> Trying to connect...'.format(wrk_num))
 
     # Set up a channel to receive work from the ventilator
     work_receiver = context.socket(zmq.PULL)
@@ -65,7 +65,7 @@ def worker(wrk_num):
         if socks.get(control_receiver) == zmq.POLLIN:
             control_message = control_receiver.recv_json()
             if control_message == "FINISHED":
-                print("{}> Received FINSHED, quitting!".format(wrk_num))
+                #print("{}> Received FINSHED, quitting!".format(wrk_num))
                 break
 
 def result_manager():
